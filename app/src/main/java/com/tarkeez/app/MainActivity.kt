@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 var screen by remember { mutableStateOf("home") }
+                var diagnosticResult by remember { mutableStateOf<DiagnosticResult?>(null) }
                 var selectedCategory by remember { mutableStateOf(QuestionBank.QUANT) }
                 var questions by remember { mutableStateOf(emptyList<Question>()) }
                 var index by remember { mutableIntStateOf(0) }
@@ -62,8 +63,15 @@ class MainActivity : ComponentActivity() {
                             Text("تدريب يومي للقدرات والكفايات", fontSize = 13.sp, color = teal)
                             Spacer(Modifier.height(14.dp))
                             when (screen) {
+                                "diagnostic" -> DiagnosticScreen(onDone = { result -> diagnosticResult = result; screen = "report" }, onBack = { screen = "home" })
+                                "report" -> diagnosticResult?.let { result -> DiagnosticReport(result, onRetry = { screen = "diagnostic" }, onBack = { screen = "home" }) }
                                 "home" -> {
-                                    InfoPanel("تدريبك اليوم", "اختر المجال الذي تريد تطويره", "$completed جلسة مكتملة  •  $points نقطة")
+                                    InfoPanel("مسارك الشخصي", "ابدأ بتقييم مستواك ثم اتبع خطة تناسبك", "$completed جلسة مكتملة  •  $points نقطة")
+                                    Spacer(Modifier.height(10.dp))
+                                    Button(onClick = { screen = "diagnostic" }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("اختبار تحديد المستوى الشخصي") }
+                                    if (diagnosticResult != null) {
+                                        TextButton(onClick = { screen = "report" }) { Text("عرض خطتي الشخصية") }
+                                    }
                                     Spacer(Modifier.height(12.dp))
                                     Text("الأقسام", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navy)
                                     Spacer(Modifier.height(8.dp))
