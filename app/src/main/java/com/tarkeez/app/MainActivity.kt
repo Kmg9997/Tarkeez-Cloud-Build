@@ -228,7 +228,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun InfoPanel(title: String, main: String, detail: String) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = panel),
         shape = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
