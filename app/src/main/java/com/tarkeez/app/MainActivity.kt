@@ -9,98 +9,152 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import java.time.LocalDate
-import java.time.DayOfWeek
-import kotlin.random.Random
 
-private val ink = Color(0xFF15253D)
-private val accent = Color(0xFF166B79)
-private val paper = Color(0xFFF4F7FA)
-private data class Puzzle(val title: String, val question: String, val choices: List<String>, val correct: Int, val explanation: String)
+private val navy = Color(0xFF172C43)
+private val teal = Color(0xFF176B77)
+private val background = Color(0xFFF3F7FA)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val store = getSharedPreferences("tarkeez_progress", MODE_PRIVATE)
+        val prefs = getSharedPreferences("tarkeez_progress", MODE_PRIVATE)
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                var page by remember { mutableStateOf("home") }
-                var points by remember { mutableIntStateOf(store.getInt("points", 0)) }
-                var completed by remember { mutableIntStateOf(store.getInt("completed", 0)) }
-                var level by remember { mutableIntStateOf(store.getInt("level", 1)) }
-                var correctCount by remember { mutableIntStateOf(0) }
-                var current by remember { mutableIntStateOf(0) }
-                var answered by remember { mutableStateOf<Int?>(null) }
-                var puzzles by remember { mutableStateOf(listOf<Puzzle>()) }
-                var mode by remember { mutableStateOf("كاملة") }
-                val today = LocalDate.now()
-                val topics = mapOf(DayOfWeek.SATURDAY to "الذاكرة البصرية", DayOfWeek.SUNDAY to "الانتباه", DayOfWeek.MONDAY to "الذاكرة العاملة", DayOfWeek.TUESDAY to "المنطق", DayOfWeek.WEDNESDAY to "سرعة المعالجة", DayOfWeek.THURSDAY to "التحدي الشامل", DayOfWeek.FRIDAY to "راحة اختيارية")
-                fun start(short: Boolean) {
-                    mode = if (short) "مصغرة" else "كاملة"
-                    puzzles = makePuzzles(level, if (short) 3 else 8)
-                    current = 0; correctCount = 0; answered = null; page = "play"
+                var screen by remember { mutableStateOf("home") }
+                var selectedCategory by remember { mutableStateOf(QuestionBank.QUANT) }
+                var questions by remember { mutableStateOf(emptyList<Question>()) }
+                var index by remember { mutableIntStateOf(0) }
+                var choice by remember { mutableIntStateOf(-1) }
+                var correct by remember { mutableIntStateOf(0) }
+                var points by remember { mutableIntStateOf(prefs.getInt("points", 0)) }
+                var completed by remember { mutableIntStateOf(prefs.getInt("completed", 0)) }
+                var lastScore by remember { mutableIntStateOf(0) }
+                var lastTotal by remember { mutableIntStateOf(0) }
+                val today = LocalDate.now().toString()
+                var todaySessions by remember { mutableIntStateOf(prefs.getInt("day_$today", 0)) }
+                var categorySessions by remember { mutableIntStateOf(0) }
+
+                fun begin(category: String, short: Boolean = false) {
+                    selectedCategory = category
+                    val pool = QuestionBank.questions.filter { it.category == category }.shuffled()
+                    questions = pool.take(if (short) 3 else 6)
+                    if (questions.isNotEmpty()) {
+                        index = 0
+                        choice = -1
+                        correct = 0
+                        screen = "quiz"
+                    }
                 }
-                MaterialTheme(colorScheme = lightColorScheme(primary = accent, background = paper, surface = Color.White)) {
-                    Surface(modifier = Modifier.fillMaxSize(), color = paper) {
-                        Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Text("تركيز", color = ink, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("دقائق يومية لعقل أكثر حضوراً", color = accent, fontSize = 14.sp)
-                            when (page) {
+
+                MaterialTheme(colorScheme = lightColorScheme(primary = teal, background = background, surface = Color.White)) {
+                    Surface(Modifier.fillMaxSize(), color = background) {
+                        Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
+                            Text("تركيز", fontSize = 29.sp, fontWeight = FontWeight.ExtraBold, color = navy)
+                            Text("تدريب يومي للقدرات والكفايات", fontSize = 13.sp, color = teal)
+                            Spacer(Modifier.height(14.dp))
+                            when (screen) {
                                 "home" -> {
-                                    InfoCard("تحدي اليوم", topics[today.dayOfWeek] ?: "التدريب اليومي", "المستوى $level  •  مجموع النقاط $points")
-                                    Text("ابدأ بما يناسب وقتك. الجمعة راحة ولا تُحسب انقطاعاً.", color = ink)
-                                    Button(onClick = { start(false) }, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("ابدأ جلسة اليوم — 8 ألغاز") }
-                                    OutlinedButton(onClick = { start(true) }, modifier = Modifier.fillMaxWidth()) { Text("جلسة إنقاذ — 3 ألغاز") }
-                                    OutlinedButton(onClick = { page = "progress" }, modifier = Modifier.fillMaxWidth()) { Text("تقدمي ونتائجي") }
-                                    Text("خطة الأسبوع", fontWeight = FontWeight.Bold, color = ink, fontSize = 20.sp)
-                                    LazyColumn(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                                        items(listOf("السبت — الذاكرة البصرية", "الأحد — الانتباه", "الاثنين — الذاكرة العاملة", "الثلاثاء — المنطق", "الأربعاء — سرعة المعالجة", "الخميس — التحدي الشامل", "الجمعة — راحة")) { Text(it, modifier = Modifier.fillMaxWidth(), color = ink) }
+                                    InfoPanel("تدريبك اليوم", "اختر المجال الذي تريد تطويره", "$completed جلسة مكتملة  •  $points نقطة")
+                                    Spacer(Modifier.height(12.dp))
+                                    Text("الأقسام", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navy)
+                                    Spacer(Modifier.height(8.dp))
+                                    LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.weight(1f)) {
+                                        items(QuestionBank.categories) { category ->
+                                            Card(
+                                                onClick = { selectedCategory = category; screen = "category" },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(15.dp),
+                                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                            ) {
+                                                Row(Modifier.fillMaxWidth().padding(17.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text(category, color = navy, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text("ابدأ ←", color = teal, fontSize = 13.sp)
+                                                }
+                                            }
+                                        }
+                                        item {
+                                            OutlinedButton(onClick = { screen = "progress" }, modifier = Modifier.fillMaxWidth()) { Text("نتائجي وتقدمي") }
+                                        }
                                     }
                                 }
-                                "play" -> {
-                                    val p = puzzles[current]
-                                    LinearProgressIndicator(progress = { (current + 1).toFloat() / puzzles.size }, modifier = Modifier.fillMaxWidth())
-                                    Text("لغز ${current + 1} من ${puzzles.size} • $mode", color = accent)
-                                    InfoCard(p.title, p.question, "اختر الإجابة الصحيحة")
-                                    p.choices.forEachIndexed { index, choice ->
-                                        OutlinedButton(onClick = {
-                                            if (answered == null) { answered = index; if (index == p.correct) correctCount++ }
-                                        }, enabled = answered == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(choice, textAlign = TextAlign.Center) }
+                                "category" -> {
+                                    InfoPanel(selectedCategory, "تدريبات أصلية مع شرح كل إجابة", "يعمل دون اتصال بالإنترنت")
+                                    Spacer(Modifier.height(20.dp))
+                                    Button(onClick = { begin(selectedCategory) }, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("ابدأ التدريب الكامل") }
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedButton(onClick = { begin(selectedCategory, true) }, modifier = Modifier.fillMaxWidth()) { Text("جلسة سريعة — 3 أسئلة") }
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("بعد الإجابة سيظهر سبب صحة الاختيار. الأسئلة تدريبية وليست أسئلة رسمية من الاختبارات.", color = navy, fontSize = 14.sp)
+                                    TextButton(onClick = { screen = "home" }) { Text("العودة للأقسام") }
+                                }
+                                "quiz" -> {
+                                    val q = questions[index]
+                                    Text(selectedCategory, fontWeight = FontWeight.Bold, color = teal, fontSize = 16.sp)
+                                    Spacer(Modifier.height(9.dp))
+                                    LinearProgressIndicator(progress = { (index + 1f) / questions.size }, modifier = Modifier.fillMaxWidth())
+                                    Spacer(Modifier.height(9.dp))
+                                    Text("السؤال ${index + 1} من ${questions.size}", color = navy)
+                                    Spacer(Modifier.height(10.dp))
+                                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                                        Text(q.prompt, modifier = Modifier.padding(18.dp), color = navy, fontSize = 19.sp, lineHeight = 29.sp, fontWeight = FontWeight.Medium)
                                     }
-                                    if (answered != null) {
-                                        Text(if (answered == p.correct) "إجابة صحيحة!" else "الإجابة الصحيحة: ${p.choices[p.correct]}", fontWeight = FontWeight.Bold, color = accent)
-                                        Text(p.explanation, color = ink)
+                                    Spacer(Modifier.height(12.dp))
+                                    q.choices.forEachIndexed { i, answer ->
+                                        OutlinedButton(
+                                            onClick = { if (choice == -1) { choice = i; if (i == q.answer) correct++ } },
+                                            enabled = choice == -1,
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).heightIn(min = 48.dp)
+                                        ) { Text(answer, fontSize = 16.sp, textAlign = TextAlign.Center) }
+                                    }
+                                    if (choice >= 0) {
+                                        Text(if (choice == q.answer) "إجابة صحيحة" else "الإجابة الصحيحة: ${q.choices[q.answer]}", fontWeight = FontWeight.Bold, color = teal)
+                                        Spacer(Modifier.height(5.dp))
+                                        Text(q.explanation, fontSize = 14.sp, color = navy, lineHeight = 23.sp)
+                                        Spacer(Modifier.height(8.dp))
                                         Button(onClick = {
-                                            if (current < puzzles.lastIndex) { current++; answered = null }
-                                            else {
-                                                val gained = correctCount * 10 + 5
-                                                points += gained; completed++
-                                                if (correctCount >= (puzzles.size * 0.8)) level = (level + 1).coerceAtMost(20)
-                                                store.edit().putInt("points", points).putInt("completed", completed).putInt("level", level).apply()
-                                                page = "result"
+                                            if (index < questions.lastIndex) {
+                                                index++
+                                                choice = -1
+                                            } else {
+                                                lastScore = correct
+                                                lastTotal = questions.size
+                                                points += correct * 10 + 5
+                                                completed++
+                                                todaySessions++
+                                                prefs.edit().putInt("points", points).putInt("completed", completed).putInt("day_$today", todaySessions).apply()
+                                                categorySessions++
+                                                screen = "result"
                                             }
-                                        }, modifier = Modifier.fillMaxWidth()) { Text(if (current == puzzles.lastIndex) "عرض النتيجة" else "اللغز التالي") }
+                                        }, modifier = Modifier.fillMaxWidth()) {
+                                            Text(if (index == questions.lastIndex) "عرض النتيجة" else "السؤال التالي")
+                                        }
                                     }
-                                    TextButton(onClick = { page = "home" }) { Text("إنهاء الجلسة دون حفظ") }
+                                    TextButton(onClick = { screen = "category" }) { Text("إنهاء التدريب") }
                                 }
                                 "result" -> {
-                                    InfoCard("أحسنت على إكمال الجلسة", "$correctCount من ${puzzles.size} إجابات صحيحة", "الدقة ${(100 * correctCount / puzzles.size)}%")
-                                    Text("كل عودة للتدريب خطوة مهمة، حتى لو كانت النتيجة أقل من المتوقع.", color = ink)
-                                    Button(onClick = { page = "home" }, modifier = Modifier.fillMaxWidth()) { Text("العودة للرئيسية") }
+                                    InfoPanel("اكتمل التدريب!", "$lastScore من $lastTotal إجابات صحيحة", "الدقة: ${if (lastTotal > 0) lastScore * 100 / lastTotal else 0}%  •  مجموع نقاطك $points")
+                                    Spacer(Modifier.height(15.dp))
+                                    Text("كل إجابة فرصة للتعلم. راجع شرح الأخطاء ثم جرب مرة أخرى.", color = navy)
+                                    Spacer(Modifier.height(12.dp))
+                                    Button(onClick = { begin(selectedCategory) }, modifier = Modifier.fillMaxWidth()) { Text("تدريب جديد") }
+                                    OutlinedButton(onClick = { screen = "home" }, modifier = Modifier.fillMaxWidth()) { Text("العودة للأقسام") }
                                 }
                                 "progress" -> {
-                                    InfoCard("تقدمك", "$completed جلسة مكتملة", "$points نقطة • المستوى $level")
-                                    Text("النتائج تقيس أداءك داخل الألغاز فقط، وليست تقييماً طبياً للذاكرة أو الذكاء.", color = ink)
-                                    Button(onClick = { page = "home" }) { Text("العودة") }
+                                    InfoPanel("تقدمك", "$completed جلسة مكتملة", "$points نقطة مكتسبة")
+                                    Spacer(Modifier.height(12.dp))
+                                    Text("جلسات اليوم: $todaySessions", color = navy, fontSize = 17.sp)
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("النتائج تعكس الأداء داخل التطبيق، وليست تشخيصاً للذاكرة أو مقياساً رسمياً للقدرات.", color = navy)
+                                    TextButton(onClick = { screen = "home" }) { Text("العودة") }
                                 }
                             }
                         }
@@ -112,42 +166,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun InfoCard(title: String, main: String, detail: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = accent)
-            Text(main, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = ink)
-            Text(detail, fontSize = 14.sp, color = ink)
-        }
-    }
-}
-
-private fun makePuzzles(level: Int, count: Int): List<Puzzle> = List(count) { index ->
-    val n = level.coerceIn(1, 20) + index
-    when (index % 4) {
-        0 -> {
-            val a = Random.nextInt(2, 12); val step = Random.nextInt(2, 5)
-            val answer = a + step * 4
-            val opts = listOf(answer, answer + step, answer - step, answer + step * 2).shuffled()
-            Puzzle("اكتشف النمط", "$a ، ${a+step} ، ${a+step*2} ، ${a+step*3} ، ؟", opts.map(Int::toString), opts.indexOf(answer), "كل رقم يزيد بمقدار $step")
-        }
-        1 -> {
-            val a = Random.nextInt(3, 12 + n); val b = Random.nextInt(2, 9)
-            val answer = a + b
-            val opts = listOf(answer, answer + 1, answer - 1, answer + 3).shuffled()
-            Puzzle("تركيز وحساب", "ما ناتج $a + $b ؟", opts.map(Int::toString), opts.indexOf(answer), "اجمع العددين بهدوء قبل الاختيار")
-        }
-        2 -> {
-            val words = listOf("قلم", "كتاب", "شجرة", "نافذة", "بحر", "قمر")
-            val chosen = words.shuffled().take(3)
-            val target = chosen[1]
-            val opts = listOf(target, "سيارة", "مفتاح", "مطر").shuffled()
-            Puzzle("انتباه للكلمات", "اقرأ: ${chosen.joinToString(" - ")}\nما الكلمة الثانية؟", opts, opts.indexOf(target), "الكلمة الثانية هي $target")
-        }
-        else -> {
-            val a = Random.nextInt(2, 8 + n); val answer = a * 2
-            val opts = listOf(answer, answer + 2, answer - 2, answer + 4).shuffled()
-            Puzzle("تفكير منطقي", "إذا كان كل صندوق يحتوي على كرتين، فكم كرة في $a صناديق؟", opts.map(Int::toString), opts.indexOf(answer), "نضرب عدد الصناديق في 2")
+private fun InfoPanel(title: String, main: String, detail: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = teal)
+            Text(main, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navy)
+            Text(detail, fontSize = 13.sp, color = navy)
         }
     }
 }
