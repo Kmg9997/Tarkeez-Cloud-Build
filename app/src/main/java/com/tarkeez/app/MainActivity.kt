@@ -49,8 +49,15 @@ class MainActivity : ComponentActivity() {
 
                 fun begin(category: String, short: Boolean = false) {
                     selectedCategory = category
-                    val pool = QuestionBank.questions.filter { it.category == category }.shuffled()
-                    questions = pool.take(if (short) 3 else 6)
+                    val pool = QuestionBank.questions.filter { it.category == category }
+                    val targetDifficulty = when {
+                        categorySessions >= 4 -> 3
+                        categorySessions >= 2 -> 2
+                        else -> 2
+                    }
+                    val preferred = pool.filter { it.difficulty >= targetDifficulty }.shuffled()
+                    val fallback = pool.filter { it !in preferred }.shuffled()
+                    questions = (preferred + fallback).take(if (short) 3 else 6)
                     if (questions.isNotEmpty()) {
                         index = 0
                         choice = -1
