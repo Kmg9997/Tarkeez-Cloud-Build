@@ -1,6 +1,8 @@
 package com.tarkeez.app
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -32,6 +34,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 var screen by remember { mutableStateOf("home") }
+                var lessonQuestion by remember { mutableStateOf<Question?>(null) }
                 var diagnosticResult by remember { mutableStateOf<DiagnosticResult?>(null) }
                 var selectedCategory by remember { mutableStateOf(QuestionBank.QUANT) }
                 var questions by remember { mutableStateOf(emptyList<Question>()) }
@@ -163,6 +166,26 @@ class MainActivity : ComponentActivity() {
                                     Text("بعد الإجابة سيظهر سبب صحة الاختيار. الأسئلة تدريبية وليست أسئلة رسمية من الاختبارات.", color = navy, fontSize = 14.sp)
                                     TextButton(onClick = { screen = "home" }) { Text("العودة للأقسام") }
                                 }
+                                "lesson" -> {
+                                    val lesson = lessonQuestion?.let { LearningLibrary.forQuestion(it) }
+                                    if (lesson == null) {
+                                        Text("الدرس غير متاح بعد.", color = navy)
+                                        TextButton(onClick = { screen = "quiz" }) { Text("العودة") }
+                                    } else {
+                                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            item { Text(lesson.title, color = navy, fontSize = 21.sp, fontWeight = FontWeight.Bold) }
+                                            item { InfoPanel("افهم المفهوم", lesson.concept, "شرح أصلي قيد المراجعة") }
+                                            item { Text("خطوات التطبيق", color = teal, fontWeight = FontWeight.Bold) }
+                                            items(lesson.steps) { step -> Text("• $step", color = navy, lineHeight = 25.sp) }
+                                            item { InfoPanel("مثال محلول", lesson.workedExample, "تطبيق عملي") }
+                                            item { InfoPanel("تحليل الخيارات الأخرى", lesson.whyOthersWrong, "فهم الخطأ لا حفظ الجواب") }
+                                            item { Text(lesson.sourceName, color = teal, fontWeight = FontWeight.Bold) }
+                                            item { Text(lesson.sourceNote, color = navy, fontSize = 13.sp) }
+                                            item { OutlinedButton(onClick = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(lesson.sourceUrl))) }, modifier = Modifier.fillMaxWidth()) { Text("فتح المرجع المساند") } }
+                                            item { Button(onClick = { screen = "quiz" }, modifier = Modifier.fillMaxWidth()) { Text("العودة للسؤال") } }
+                                        }
+                                    }
+                                }
                                 "quiz" -> {
                                     val q = questions[index]
                                     Text(selectedCategory, fontWeight = FontWeight.Bold, color = teal, fontSize = 16.sp)
@@ -186,6 +209,11 @@ class MainActivity : ComponentActivity() {
                                         Text(if (choice == q.answer) "إجابة صحيحة" else "الإجابة الصحيحة: ${q.choices[q.answer]}", fontWeight = FontWeight.Bold, color = teal)
                                         Spacer(Modifier.height(5.dp))
                                         Text(q.explanation, fontSize = 14.sp, color = navy, lineHeight = 23.sp)
+                                        if (LearningLibrary.forQuestion(q) != null) {
+                                            OutlinedButton(onClick = { lessonQuestion = q; screen = "lesson" }, modifier = Modifier.fillMaxWidth()) { Text("افهم الدرس من مرجعه") }
+                                        } else {
+                                            Text("الشرح المرجعي الكامل لهذا السؤال لم يراجع بعد.", color = Color(0xFFB7C6D3), fontSize = 12.sp)
+                                        }
                                         Spacer(Modifier.height(8.dp))
                                         Button(onClick = {
                                             if (index < questions.lastIndex) {
