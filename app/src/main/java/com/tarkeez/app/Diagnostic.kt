@@ -32,10 +32,10 @@ fun DiagnosticScreen(onDone: (DiagnosticResult) -> Unit, onBack: () -> Unit) {
     val scores = remember { mutableStateMapOf<String, Int>() }
     val q = questions[index]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("اختبار تحديد المستوى", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF172C43))
+        Text("اختبار تحديد المستوى", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF5F8FA))
         Text("اختبار مبدئي من 20 سؤالاً يغطي الأقسام العشرة. نتيجته إرشادية وليست درجة اختبار رسمية.", fontSize = 14.sp)
         LinearProgressIndicator(progress = { (index + 1f) / questions.size }, modifier = Modifier.fillMaxWidth())
-        Text("السؤال ${index + 1} من ${questions.size} • ${q.category}", color = Color(0xFF176B77))
+        Text("السؤال ${index + 1} من ${questions.size} • ${q.category}", color = Color(0xFF22D4AC))
         Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
             Text(q.prompt, modifier = Modifier.padding(18.dp), fontSize = 19.sp, lineHeight = 28.sp)
         }
@@ -62,9 +62,9 @@ fun DiagnosticScreen(onDone: (DiagnosticResult) -> Unit, onBack: () -> Unit) {
 @Composable
 fun DiagnosticReport(result: DiagnosticResult, onRetry: () -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("تقرير مستواك الشخصي", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF172C43))
+        Text("تقرير مستواك الشخصي", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF5F8FA))
         val totalCorrect = result.scores.values.sum()
-        Text("الإجابات الصحيحة: $totalCorrect من ${result.total}", fontSize = 20.sp, color = Color(0xFF176B77))
+        Text("الإجابات الصحيحة: $totalCorrect من ${result.total}", fontSize = 20.sp, color = Color(0xFF22D4AC))
         Text("تقييم مبدئي: سؤالان فقط لكل مجال؛ لا تعتمد عليه وحده لتحديد مستوى دقيق.", fontSize = 13.sp)
         result.scores.forEach { (category, score) ->
             Text("$category: $score / 2", fontSize = 15.sp)
