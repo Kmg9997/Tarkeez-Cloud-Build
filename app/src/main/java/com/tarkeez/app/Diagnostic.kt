@@ -25,7 +25,7 @@ data class DiagnosticResult(val scores: Map<String, Int>, val total: Int) {
 
 @Composable
 fun DiagnosticScreen(onDone: (DiagnosticResult) -> Unit, onBack: () -> Unit) {
-    val categories = listOf(QuestionBank.QUANT, QuestionBank.VERBAL, QuestionBank.GENERAL, QuestionBank.TEACHER, QuestionBank.STEP, QuestionBank.BRAIN)
+    val categories = QuestionBank.categories
     val questions = remember { categories.flatMap { c -> QuestionBank.questions.filter { it.category == c }.shuffled().take(2) } }
     var index by remember { mutableIntStateOf(0) }
     var selected by remember { mutableIntStateOf(-1) }
@@ -33,7 +33,7 @@ fun DiagnosticScreen(onDone: (DiagnosticResult) -> Unit, onBack: () -> Unit) {
     val q = questions[index]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("اختبار تحديد المستوى", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF172C43))
-        Text("اختبار مبدئي من 12 سؤالاً يغطي الأقسام الستة. نتيجته إرشادية وليست درجة اختبار رسمية.", fontSize = 14.sp)
+        Text("اختبار مبدئي من 20 سؤالاً يغطي الأقسام العشرة. نتيجته إرشادية وليست درجة اختبار رسمية.", fontSize = 14.sp)
         LinearProgressIndicator(progress = { (index + 1f) / questions.size }, modifier = Modifier.fillMaxWidth())
         Text("السؤال ${index + 1} من ${questions.size} • ${q.category}", color = Color(0xFF176B77))
         Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
