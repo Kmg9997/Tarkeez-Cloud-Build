@@ -22,6 +22,8 @@ import java.time.LocalDate
 private val navy = Color(0xFFF5F8FA)
 private val teal = Color(0xFF22D4AC)
 private val background = Color(0xFF0C111A)
+private val panel = Color(0xFF1B2430)
+private val tahsili = listOf(QuestionBank.T_MATH, QuestionBank.T_PHYSICS, QuestionBank.T_CHEMISTRY, QuestionBank.T_BIOLOGY)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,8 +61,9 @@ class MainActivity : ComponentActivity() {
 
                 MaterialTheme(colorScheme = darkColorScheme(primary = teal, background = background, surface = Color(0xFF1B2430), onSurface = navy)) {
                     Surface(Modifier.fillMaxSize(), color = background) {
-                        Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 14.dp)) {
-                            Text("تركيز  •  مسارك نحو الإتقان", fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = navy)
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 18.dp, vertical = 14.dp)) {
+                            Text("مِعيار", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = navy)
+                            Text("تعلّم • تدرّب • أتقن", color = Color(0xFFB7C6D3), fontSize = 13.sp)
                             Text("القدرات  •  التحصيلي  •  الكفايات  •  STEP", fontSize = 12.sp, color = teal)
                             Spacer(Modifier.height(14.dp))
                             when (screen) {
@@ -77,9 +80,9 @@ class MainActivity : ComponentActivity() {
                                     Text("اختر مسارك", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navy)
                                     Spacer(Modifier.height(8.dp))
                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.weight(1f)) {
-                                        items(QuestionBank.categories) { category ->
+                                        items(QuestionBank.categories.filter { it !in tahsili }.take(2) + listOf("التحصيلي") + QuestionBank.categories.filter { it !in tahsili }.drop(2)) { category ->
                                             Card(
-                                                onClick = { selectedCategory = category; screen = "category" },
+                                                onClick = { if (category == "التحصيلي") { screen = "tahsili" } else { selectedCategory = category; screen = "category" } },
                                                 modifier = Modifier.fillMaxWidth(),
                                                 shape = RoundedCornerShape(15.dp),
                                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1B2430))
@@ -95,6 +98,22 @@ class MainActivity : ComponentActivity() {
                                             OutlinedButton(onClick = { screen = "mistakes" }, modifier = Modifier.fillMaxWidth()) { Text("دفتر أخطائي (${mistakes.size})") }
                                         }
                                     }
+                                }
+                                "tahsili" -> {
+                                    Text("التحصيلي", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = navy)
+                                    Text("اختر المادة التي تريد التدريب عليها", color = Color(0xFFB7C6D3), fontSize = 14.sp)
+                                    Spacer(Modifier.height(14.dp))
+                                    tahsili.forEach { subject ->
+                                        Card(
+                                            onClick = { selectedCategory = subject; screen = "category" },
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                                            colors = CardDefaults.cardColors(containerColor = panel),
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Text(subject.removePrefix("التحصيلي — "), modifier = Modifier.padding(20.dp), color = navy, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    TextButton(onClick = { screen = "home" }) { Text("العودة للرئيسية") }
                                 }
                                 "mistakes" -> {
                                     Text("دفتر أخطائي", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = navy)
@@ -117,8 +136,8 @@ class MainActivity : ComponentActivity() {
                                 "notes" -> {
                                     InfoPanel("ملخص المذاكرة", selectedCategory, "راجع القاعدة ثم اختبر فهمك")
                                     Spacer(Modifier.height(14.dp))
-                                    Card(modifier = Modifier.fillMaxWidth()) {
-                                        Text(QuestionBank.studyNotes[selectedCategory] ?: "سيضاف الملخص قريباً.", modifier = Modifier.padding(18.dp), fontSize = 17.sp, lineHeight = 28.sp)
+                                    Card(colors = CardDefaults.cardColors(containerColor = panel), modifier = Modifier.fillMaxWidth()) {
+                                        Text(QuestionBank.studyNotes[selectedCategory] ?: "سيضاف الملخص قريباً.", modifier = Modifier.padding(18.dp), color = navy, fontSize = 17.sp, lineHeight = 28.sp)
                                     }
                                     Spacer(Modifier.height(14.dp))
                                     Button(onClick = { begin(selectedCategory) }, modifier = Modifier.fillMaxWidth()) { Text("تدرب على هذا القسم") }
@@ -144,7 +163,7 @@ class MainActivity : ComponentActivity() {
                                     Spacer(Modifier.height(9.dp))
                                     Text("السؤال ${index + 1} من ${questions.size}", color = navy)
                                     Spacer(Modifier.height(10.dp))
-                                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1B2430)), modifier = Modifier.fillMaxWidth()) {
+                                    Card(colors = CardDefaults.cardColors(containerColor = panel), modifier = Modifier.fillMaxWidth()) {
                                         Text(q.prompt, modifier = Modifier.padding(18.dp), color = navy, fontSize = 19.sp, lineHeight = 29.sp, fontWeight = FontWeight.Medium)
                                     }
                                     Spacer(Modifier.height(12.dp))
@@ -216,7 +235,7 @@ private fun InfoPanel(title: String, main: String, detail: String) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = teal)
             Text(main, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navy)
-            Text(detail, fontSize = 13.sp, color = navy)
+            Text(detail, fontSize = 13.sp, color = Color(0xFFB7C6D3))
         }
     }
 }
