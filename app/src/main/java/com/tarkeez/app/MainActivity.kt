@@ -94,8 +94,20 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 }
+                                "notes" -> {
+                                    InfoPanel("ملخص المذاكرة", selectedCategory, "راجع القاعدة ثم اختبر فهمك")
+                                    Spacer(Modifier.height(14.dp))
+                                    Card(modifier = Modifier.fillMaxWidth()) {
+                                        Text(QuestionBank.studyNotes[selectedCategory] ?: "سيضاف الملخص قريباً.", modifier = Modifier.padding(18.dp), fontSize = 17.sp, lineHeight = 28.sp)
+                                    }
+                                    Spacer(Modifier.height(14.dp))
+                                    Button(onClick = { begin(selectedCategory) }, modifier = Modifier.fillMaxWidth()) { Text("تدرب على هذا القسم") }
+                                    TextButton(onClick = { screen = "category" }) { Text("العودة") }
+                                }
                                 "category" -> {
                                     InfoPanel(selectedCategory, "تدريبات أصلية مع شرح كل إجابة", "يعمل دون اتصال بالإنترنت")
+                                    Spacer(Modifier.height(10.dp))
+                                    OutlinedButton(onClick = { screen = "notes" }, modifier = Modifier.fillMaxWidth()) { Text("ملخص المذاكرة") }
                                     Spacer(Modifier.height(20.dp))
                                     Button(onClick = { begin(selectedCategory) }, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("ابدأ التدريب الكامل") }
                                     Spacer(Modifier.height(8.dp))
