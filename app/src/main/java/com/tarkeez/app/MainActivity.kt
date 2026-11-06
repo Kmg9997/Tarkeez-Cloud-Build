@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
                             Text("مِعيار", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = navy)
                             Text("تعلّم • تدرّب • أتقن", color = Color(0xFFB7C6D3), fontSize = 13.sp)
                             Text("القدرات  •  التحصيلي  •  الكفايات  •  STEP", fontSize = 12.sp, color = teal)
+                            Text(ContentQuality.DISCLAIMER, fontSize = 11.sp, color = Color(0xFFB7C6D3), lineHeight = 16.sp)
                             Spacer(Modifier.height(14.dp))
                             when (screen) {
                                 "diagnostic" -> DiagnosticScreen(onDone = { result -> diagnosticResult = result; screen = "report" }, onBack = { screen = "home" })
