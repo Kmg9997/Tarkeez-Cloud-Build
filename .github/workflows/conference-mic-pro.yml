@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Extract project
-        run: |\n          tar -xJf ConferenceMicPro-source.tar.xz\n          base64 -d ConferenceMicPro-latency-v1.1.patch.xz.b64 | xz -dc | (cd ConferenceMicPro && patch --batch -p1)
+        run: |
+          tar -xJf ConferenceMicPro-source.tar.xz
+          base64 -d ConferenceMicPro-latency-v1.1.patch.xz.b64 | xz -dc | (cd ConferenceMicPro && patch --batch -p1)
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
