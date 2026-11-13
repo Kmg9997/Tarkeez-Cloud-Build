@@ -1,4 +1,4 @@
-name: Conference Mic Pro — Android APK
+name: Conference Mic Pro v1.1 — Low Latency APK
 on:
   push:
     branches:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Extract project
-        run: tar -xJf ConferenceMicPro-source.tar.xz
+        run: |\n          tar -xJf ConferenceMicPro-source.tar.xz\n          base64 -d ConferenceMicPro-latency-v1.1.patch.xz.b64 | xz -dc | (cd ConferenceMicPro && patch --batch -p1)
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
