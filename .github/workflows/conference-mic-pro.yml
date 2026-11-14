@@ -1,8 +1,8 @@
-name: Conference Mic Pro v1.1 — Low Latency APK
+name: Conference Mic Pro v1.2 — Bluetooth Quality
 on:
   push:
     branches:
-      - conference-mic-pro-20261114-1
+      - conference-mic-pro-v1-2-quality
   workflow_dispatch:
 jobs:
   build:
@@ -15,6 +15,7 @@ jobs:
         run: |
           tar -xJf ConferenceMicPro-source.tar.xz
           base64 -d ConferenceMicPro-latency-v1.1.patch.xz.b64 | xz -dc | (cd ConferenceMicPro && patch --batch -p1)
+          python3 conference_v12_upgrade.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -32,6 +33,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ConferenceMicPro-APK
+          name: ConferenceMicPro-v1.2-Quality-APK
           path: ConferenceMicPro/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
